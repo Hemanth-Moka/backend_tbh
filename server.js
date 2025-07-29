@@ -2,12 +2,19 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 const path = require('path');
+const fs = require('fs');
 
 // Initialize app
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+// Ensure 'uploads' folder exists
+const uploadDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir);
+}
 
 // Routes
 const loginRoute = require('./routes/login');
