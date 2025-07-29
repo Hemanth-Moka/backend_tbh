@@ -1,14 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
-const { Pool } = require('pg');
+const pool = require('../db'); // adjust path as needed
 
-// PostgreSQL pool
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
-
-// POST /login
 router.post('/', async (req, res) => {
   const { email, password } = req.body;
 
