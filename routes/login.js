@@ -1,13 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const { Pool } = require('pg');
+const pool = require('../db'); // Shared pool
+// const bcrypt = require('bcrypt'); // Uncomment if using hashing
 
-// PostgreSQL pool
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
-
-// POST /login
 router.post('/', async (req, res) => {
   const { email, password } = req.body;
 
@@ -20,10 +15,14 @@ router.post('/', async (req, res) => {
 
     const admin = result.rows[0];
 
-    // Compare plain text passwords
+    // Plain text password check (for now)
     if (admin.password !== password) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
+
+    // If using bcrypt:
+    // const match = await bcrypt.compare(password, admin.password);
+    // if (!match) return res.status(401).json({ message: 'Invalid email or password' });
 
     res.json({ message: 'Login successful' });
   } catch (err) {
