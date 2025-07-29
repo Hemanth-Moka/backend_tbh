@@ -1,16 +1,15 @@
+require('dotenv').config();
 const express = require('express');
+const cors = require('cors');
 const app = express();
-const PORT = 3000;
 
-// Middleware to parse JSON
+app.use(cors());
 app.use(express.json());
 
-// Example route
-app.get('/', (req, res) => {
-  res.send('Hello from the Node.js backend!');
-});
+// Import the login route
+const loginRoute = require('./routes/login');
+app.use('/login', loginRoute);  // This means POST /login will go to routes/login.js
 
 // Start the server
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
