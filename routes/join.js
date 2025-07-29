@@ -1,68 +1,48 @@
 // routes/join.js
 const express = require('express');
+const router = express.Router();
 const multer = require('multer');
-const path = require('path');
 const pool = require('../db');
 
-const router = express.Router();
-
-// Multer setup
+// Storage setup
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, 'uploads/'),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    cb(null, `${file.fieldname}-${Date.now()}${ext}`);
-  }
+  filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname)
 });
 
-const upload = multer({
-  storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB max
-  fileFilter: (req, file, cb) => {
-    if (!file.mimetype.startsWith('image/')) {
-      return cb(new Error('Only images are allowed'), false);
-    }
-    cb(null, true);
-  }
-});
+const upload = multer({ storage });
 
-const cpUpload = upload.fields([
+// POST /join
+router.post('/', upload.fields([
   { name: 'profile_photo', maxCount: 1 },
   { name: 'cover_photo', maxCount: 1 }
-]);
-
-router.post('/', cpUpload, async (req, res) => {
+]), async (req, res) => {
   try {
     const {
-      username, about, first_name,
-      last_name, email, interest_area,
-      motivation, experience
+      username, about, first_name, last_name,
+      email, interest_area, motivation, experience
     } = req.body;
 
-    const profilePhoto = req.files['profile_photo']?.[0]?.filename || null;
-    const coverPhoto = req.files['cover_photo']?.[0]?.filename || null;
+    const profile_photo = req.files['profile_photo']?.[0]?.filename || null;
+    const cover_photo = req.files['cover_photo']?.[0]?.filename || null;
 
-    const insertQuery = `
-      INSERT INTO users (
+    const result = await pool.query(
+      `INSERT INTO users (
         username, about, profile_photo, cover_photo,
         first_name, last_name, email, interest_area,
-        motivation, experience, created_at
-      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,NOW())
-      RETURNING *;
-    `;
+        motivation, experience
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *`,
+      [
+        username, about, profile_photo, cover_photo,
+        first_name, last_name, email, interest_area,
+        motivation, experience
+      ]
+    );
 
-    const values = [
-      username, about, profilePhoto, coverPhoto,
-      first_name, last_name, email, interest_area,
-      motivation, experience
-    ];
-
-    const result = await pool.query(insertQuery, values);
-
-    res.status(201).json({ message: 'User registered', user: result.rows[0] });
-  } catch (error) {
-    console.error('DB insert error:', error);
-    res.status(500).json({ error: 'Database error' });
+    res.status(200).json({ success: true, user: result.rows[0] });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ success: false, error: 'Server error' });
   }
 });
 
