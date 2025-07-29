@@ -1,20 +1,25 @@
-require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const app = express();
+require('dotenv').config();
+const path = require('path');
 
 app.use(cors());
 app.use(express.json());
 
-// Serve uploaded images statically
-app.use('/uploads', express.static('uploads'));
+
 
 // Routes
 const loginRoute = require('./routes/login');
 const joinRoute = require('./routes/join');
 
+
 app.use('/login', loginRoute);
 app.use('/join', joinRoute);
+
+
+// Static folder for uploaded images
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 
 // Optional: Multer error handler
 app.use((err, req, res, next) => {

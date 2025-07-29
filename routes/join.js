@@ -1,56 +1,68 @@
-const fs = require('fs');
-const path = require('path');
 const express = require('express');
-const router = express.Router();
 const multer = require('multer');
+const path = require('path');
 const pool = require('../db');
+const router = express.Router();
 
-// Ensure 'uploads' folder exists
-const uploadDir = path.join(__dirname, '..', 'uploads');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir);
-}
-
-// Multer storage config
+// Setup multer for file uploads
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadDir),
-  filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname)
+  destination: (req, file, cb) => cb(null, 'uploads/'),
+  filename: (req, file, cb) =>
+    cb(null, `${Date.now()}-${file.originalname.replace(/\s+/g, '-')}`),
 });
 
 const upload = multer({ storage });
 
-// POST /join
-router.post('/', upload.fields([
-  { name: 'profile_photo', maxCount: 1 },
-  { name: 'cover_photo', maxCount: 1 }
-]), async (req, res) => {
-  try {
-    const {
-      username, about, first_name, last_name,
-      email, interest_area, motivation, experience
-    } = req.body;
+router.post(
+  '/',
+  upload.fields([
+    { name: 'profilePhoto', maxCount: 1 },
+    { name: 'coverPhoto', maxCount: 1 },
+  ]),
+  async (req, res) => {
+    try {
+      const {
+        username,
+        about,
+        firstName,
+        lastName,
+        email,
+        interestArea,
+        motivation,
+        experience,
+      } = req.body;
 
-    const profile_photo = req.files['profile_photo']?.[0]?.filename || null;
-    const cover_photo = req.files['cover_photo']?.[0]?.filename || null;
+      const profilePhoto = req.files['profilePhoto']?.[0]?.filename || null;
+      const coverPhoto = req.files['coverPhoto']?.[0]?.filename || null;
 
-    const result = await pool.query(
-      `INSERT INTO users (
-        username, about, profile_photo, cover_photo,
-        first_name, last_name, email, interest_area,
-        motivation, experience
-      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *`,
-      [
-        username, about, profile_photo, cover_photo,
-        first_name, last_name, email, interest_area,
-        motivation, experience
-      ]
-    );
+      const query = `
+        INSERT INTO members (
+          username, about, first_name, last_name, email,
+          interest_area, motivation, experience, profile_photo, cover_photo
+        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+        RETURNING *
+      `;
 
-    res.status(200).json({ success: true, user: result.rows[0] });
-  } catch (err) {
-    console.error('Join route error:', err.message);
-    res.status(500).json({ success: false, error: 'Server error' });
+      const values = [
+        username,
+        about,
+        firstName,
+        lastName,
+        email,
+        interestArea,
+        motivation,
+        experience,
+        profilePhoto,
+        coverPhoto,
+      ];
+
+      const result = await pool.query(query, values);
+      res.status(201).json({ message: 'Successfully registered', data: result.rows[0] });
+    } catch (err) {
+      console.error('Join form error:', err);
+      res.status(500).json({ error: 'Internal server error' });
+    }
   }
-});
+);
 
 module.exports = router;
