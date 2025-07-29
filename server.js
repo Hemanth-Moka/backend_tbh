@@ -8,7 +8,12 @@ app.use(express.json());
 
 // Import the login route
 const loginRoute = require('./routes/login');
+const joinRoute = require('./routes/join');
+
 app.use('/login', loginRoute);  // This means POST /login will go to routes/login.js
+app.use('/join', joinRoute);
+app.use('/uploads', express.static('uploads')); // serve images
+
 
 // Start the server
 const PORT = process.env.PORT || 5000;
