@@ -65,4 +65,30 @@ router.post(
   }
 );
 
+
+// GET all members
+router.get('/', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM members ORDER BY id DESC');
+    res.status(200).json(result.rows);
+  } catch (err) {
+    console.error('Fetch members error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+
+// DELETE member by id
+router.delete('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.query('DELETE FROM members WHERE id = $1', [id]);
+    res.status(200).json({ message: 'Member deleted successfully' });
+  } catch (err) {
+    console.error('Delete member error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+
 module.exports = router;
